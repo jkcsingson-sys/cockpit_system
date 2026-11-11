@@ -3,35 +3,47 @@ from .models import Transaction
 
 
 class TransactionForm(forms.ModelForm):
-  signature_data = forms.CharField(
-      widget=forms.HiddenInput(), required=False
-  )
+    signature_data = forms.CharField(
+        widget=forms.HiddenInput(), required=False
+    )
 
-  class Meta:
-    model = Transaction
-    fields = [
-        'teller',
-        'fight_number',
-        'transaction_type',
-        'amount',
-        'photo',
-    ]
-    widgets = {
-        'teller': forms.Select(attrs={'class': 'form-select form-select-lg'}),
-        'fight_number': forms.NumberInput(
-            attrs={'class': 'form-control form-control-lg', 'min': '1'}
-        ),
-        'transaction_type': forms.Select(
-            attrs={'class': 'form-select form-select-lg'}
-        ),
-        'amount': forms.NumberInput(
-            attrs={'class': 'form-control form-control-lg', 'step': '0.01'}
-        ),
-        'photo': forms.ClearableFileInput(
-            attrs={
-                'class': 'form-control',
-                'accept': 'image/*',
-                'capture': 'environment',
-            }
-        ),
-    }
+    class Meta:
+        model = Transaction
+        fields = [
+            'teller',
+            'fight_number',
+            'transaction_type',
+            'amount',
+            'photo',
+        ]
+        widgets = {
+            'teller': forms.Select(attrs={'class': 'form-select form-select-lg'}),
+            'fight_number': forms.NumberInput(
+                attrs={'class': 'form-control form-control-lg', 'min': '1'}
+            ),
+            'transaction_type': forms.Select(
+                attrs={'class': 'form-select form-select-lg'}
+            ),
+            'amount': forms.NumberInput(
+                attrs={
+                    'class': 'form-control form-control-lg', 
+                    'step': '0.01',
+                    'min': '5000',
+                    'max': '50000'
+                }
+            ),
+            'photo': forms.ClearableFileInput(
+                attrs={
+                    'class': 'form-control',
+                    'accept': 'image/*',
+                    'capture': 'environment',
+                }
+            ),
+        }
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is not None:
+            if amount < 5000 or amount > 50000:
+                raise forms.ValidationError("The amount must be between ₱5,000 and ₱50,000.")
+        return amount
