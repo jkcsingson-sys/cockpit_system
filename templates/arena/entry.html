@@ -50,12 +50,12 @@
                     {{ form.amount }}
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Photo Capture</label>
+                    <label class="form-label">Photo Capture <span class="text-danger">*</span></label>
                     {{ form.photo }}
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Teller Signature</label>
+                    <label class="form-label">Teller Signature <span class="text-danger">*</span></label>
                     <canvas id="sig-canvas"></canvas>
                     <button type="button" class="btn btn-sm btn-outline-dark mt-1" id="clear-btn">Clear Signature</button>
                 </div>
@@ -64,19 +64,37 @@
             </form>
         </div>
     </div>
+
+    <!-- Logout Button Section -->
+    <div style="text-align: center; margin-top: 15px;">
+        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">
+                Logout
+            </button>
+        </form>
+    </div>
 </div>
 
 <script>
     const canvas = document.getElementById('sig-canvas');
     const ctx = canvas.getContext('2d');
     let writingInCanvas = false;
+    let hasSigned = false;
 
     function resizeCanvas() {
+        const data = canvas.toDataURL();
         canvas.width = canvas.offsetWidth;
         canvas.height = canvas.offsetHeight;
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
         ctx.strokeStyle = '#000000';
+        
+        if (hasSigned) {
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0);
+            img.src = data;
+        }
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -88,8 +106,21 @@
         return { x: clientX - rect.left, y: clientY - rect.top };
     }
 
-    function startDraw(e) { writingInCanvas = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }
-    function draw(e) { if (!writingInCanvas) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+    function startDraw(e) { 
+        writingInCanvas = true; 
+        hasSigned = true; 
+        ctx.beginPath(); 
+        const p = getPos(e); 
+        ctx.moveTo(p.x, p.y); 
+    }
+    
+    function draw(e) { 
+        if (!writingInCanvas) return; 
+        const p = getPos(e); 
+        ctx.lineTo(p.x, p.y); 
+        ctx.stroke(); 
+    }
+    
     function stopDraw() { writingInCanvas = false; }
 
     canvas.addEventListener('mousedown', startDraw);
@@ -101,21 +132,17 @@
 
     document.getElementById('clear-btn').addEventListener('click', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasSigned = false;
     });
 
-    document.getElementById('trans-form').addEventListener('submit', function() {
+    document.getElementById('trans-form').addEventListener('submit', function(e) {
+        if (!hasSigned) {
+            e.preventDefault();
+            alert('Teller signature is required! Please sign before submitting.');
+            return false;
+        }
         document.getElementById('id_signature_data').value = canvas.toDataURL('image/png');
     });
 </script>
-
-<!-- Inside your form, right below the Submit Transaction button -->
-<div style="text-align: center; margin-top: 15px;">
-    <form action="{% url 'logout' %}" method="post" style="display: inline;">
-        {% csrf_token %}
-        <button type="submit" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">
-            Logout
-        </button>
-    </form>
-</div>
 </body>
 </html>
