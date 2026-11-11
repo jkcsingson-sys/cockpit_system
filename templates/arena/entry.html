@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorado Mega Cockpit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #sig-canvas { border: 2px dashed #800000; border-radius: 8px; width: 100%; height: 160px; touch-action: none; background: #fff; }
+        .custom-header { background-color: #800000 !important; color: white; }
+        .btn-maroon { background-color: #800000; border-color: #800000; color: white; }
+        .btn-maroon:hover { background-color: #600000; border-color: #500000; color: white; }
+        .form-label { color: #000000 !important; font-weight: 800 !important; }
+    </style>
+</head>
+<body class="bg-white">
+<div class="container py-3" style="max-width: 500px;">
+    <div class="card shadow-sm mb-3 border-danger">
+        <div class="card-body text-center custom-header rounded-top">
+            <h4 class="m-0 fw-bold">Colorado Mega Cockpit</h4>
+            <small class="text-light">{% if active_event %}{{ active_event.name }}{% else %}NO ACTIVE EVENT{% endif %}</small>
+        </div>
+        <div class="card-body bg-light">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} p-2">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" id="trans-form">
+                {% csrf_token %}
+                {{ form.signature_data }}
+
+                <div class="mb-2">
+                    <label class="form-label">Teller</label>
+                    {{ form.teller }}
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label">Fight #</label>
+                        {{ form.fight_number }}
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Type</label>
+                        {{ form.transaction_type }}
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Amount (₱)</label>
+                    {{ form.amount }}
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Photo Capture (Optional)</label>
+                    {{ form.photo }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Teller Signature</label>
+                    <canvas id="sig-canvas"></canvas>
+                    <button type="button" class="btn btn-sm btn-outline-dark mt-1" id="clear-btn">Clear Signature</button>
+                </div>
+
+                <button type="submit" class="btn btn-maroon btn-lg w-100 fw-bold">Submit Transaction</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('sig-canvas');
+    const ctx = canvas.getContext('2d');
+    let writingInCanvas = false;
+
+    function resizeCanvas() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000000';
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDraw(e) { writingInCanvas = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }
+    function draw(e) { if (!writingInCanvas) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+    function stopDraw() { writingInCanvas = false; }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('touchstart', startDraw);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDraw);
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    document.getElementById('trans-form').addEventListener('submit', function() {
+        document.getElementById('id_signature_data').value = canvas.toDataURL('image/png');
+    });
+</script>
+</body>
+</html>
