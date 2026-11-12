@@ -1,5 +1,5 @@
-from django.urls import path
 from django.contrib import admin
+from django.urls import path
 from .models import Event, Teller, Transaction
 
 # Override Admin site titles
@@ -28,15 +28,14 @@ class TransactionAdmin(admin.ModelAdmin):
 
     list_display = (
         'event',
-        'fight_number',
         'teller',
         'transaction_type',
         'amount',
         'it_user',
         'timestamp',
     )
-    list_filter = ('transaction_type', 'event', 'timestamp')
-    search_fields = ('teller__name', 'it_user__username', 'fight_number')
+    list_filter = ('teller', 'transaction_type', 'event', 'timestamp')
+    search_fields = ('teller__name', 'it_user__username')
 
     def get_urls(self):
         urls = super().get_urls()
@@ -49,12 +48,20 @@ class TransactionAdmin(admin.ModelAdmin):
         from django.shortcuts import render
         from django.db.models import Sum
 
-        transactions = Transaction.objects.all()
+        # Automatically grab the currently active event
+        active_event = Event.objects.filter(is_active=True).first()
+        
+        if active_event:
+            transactions = Transaction.objects.filter(event=active_event)
+        else:
+            transactions = Transaction.objects.none()
+
         total_amount = transactions.aggregate(total=Sum('amount'))['total'] or 0
 
         context = {
             'transactions': transactions,
             'total_amount': total_amount,
-            'title': 'Post-Fight Transaction Summary Report',
+            'active_event': active_event,
+            'title': f'Post-Fight Transaction Summary Report - {active_event.name if active_event else "No Active Event"}',
         }
         return render(request, 'admin/arena/transaction/print_report.html', context)

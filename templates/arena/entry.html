@@ -29,25 +29,22 @@
 
             <form method="post" enctype="multipart/form-data" id="trans-form">
                 {% csrf_token %}
-                {{ form.signature_data }}
+                {{ form.signature_data.as_hidden }}
 
                 <div class="mb-2">
                     <label class="form-label">Teller</label>
                     {{ form.teller }}
                 </div>
-                <div class="row g-2 mb-2">
-                    <div class="col-6">
-                        <label class="form-label">Fight #</label>
-                        {{ form.fight_number }}
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Type</label>
-                        {{ form.transaction_type }}
-                    </div>
+                
+                <div class="mb-2">
+                    <label class="form-label">Type</label>
+                    {{ form.transaction_type }}
                 </div>
+
                 <div class="mb-2">
                     <label class="form-label">Amount (₱)</label>
                     {{ form.amount }}
+                    <small class="text-muted d-block mt-1">Allowed range: ₱5,000 – ₱50,000</small>
                 </div>
                 <div class="mb-2">
                     <label class="form-label">Photo Capture <span class="text-danger">*</span></label>
@@ -136,11 +133,23 @@
     });
 
     document.getElementById('trans-form').addEventListener('submit', function(e) {
+        const amountVal = parseFloat(document.getElementById('id_amount').value);
+        
+        // Validate amount range (₱5,000 to ₱50,000)
+        if (isNaN(amountVal) || amountVal < 5000 || amountVal > 50000) {
+            e.preventDefault();
+            alert('Amount must be between ₱5,000 and ₱50,000!');
+            document.getElementById('id_amount').focus();
+            return false;
+        }
+
+        // Validate signature requirement
         if (!hasSigned) {
             e.preventDefault();
             alert('Teller signature is required! Please sign before submitting.');
             return false;
         }
+        
         document.getElementById('id_signature_data').value = canvas.toDataURL('image/png');
     });
 </script>

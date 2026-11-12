@@ -24,6 +24,9 @@
     <div class="header-box text-center">
         <h2 class="fw-bold m-0" style="color: #800000;">COLORADO MEGA COCKPIT</h2>
         <p class="m-0 text-muted">Official Admin Transaction Report</p>
+        {% if active_event %}
+            <p class="fw-bold mt-1 mb-0">{{ active_event.name }} ({{ active_event.date }})</p>
+        {% endif %}
     </div>
 
     <div class="row mb-3">
@@ -42,7 +45,6 @@
                     <th>Timestamp</th>
                     <th>Event</th>
                     <th>Teller</th>
-                    <th>Fight #</th>
                     <th>Type</th>
                     <th>Amount (₱)</th>
                     <th>IT Staff</th>
@@ -54,14 +56,13 @@
                     <td>{{ t.timestamp|date:"M. d, Y, g:i a" }}</td>
                     <td>{{ t.event.name }}</td>
                     <td>{{ t.teller.name }}</td>
-                    <td>{{ t.fight_number }}</td>
                     <td>{{ t.get_transaction_type_display }}</td>
                     <td class="fw-bold">₱{{ t.amount|floatformat:2 }}</td>
                     <td>{{ t.it_user.username }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted">No transactions found.</td>
+                    <td colspan="6" class="text-center text-muted">No transactions found.</td>
                 </tr>
                 {% endfor %}
             </tbody>

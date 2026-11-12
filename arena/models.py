@@ -51,7 +51,6 @@ class Transaction(models.Model):
 
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    fight_number = models.PositiveIntegerField(help_text='Associated Fight #')
 
     # Media captures (Both strictly required)
     signature = models.ImageField(upload_to='signatures/%Y/%m/%d/')
@@ -60,4 +59,4 @@ class Transaction(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'[{self.event.name}] Fight #{self.fight_number} {self.teller.name} ({self.transaction_type}): ₱{self.amount}'
+        return f'[{self.event.name}] {self.teller.name} ({self.transaction_type}): ₱{self.amount}'
