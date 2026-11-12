@@ -11,6 +11,24 @@
         .btn-maroon { background-color: #800000; border-color: #800000; color: white; }
         .btn-maroon:hover { background-color: #600000; border-color: #500000; color: white; }
         .form-label { color: #000000 !important; font-weight: 800 !important; }
+        
+        /* Direct touch overlay wrapper */
+        .file-upload-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 5;
+        }
     </style>
 </head>
 <body class="bg-white">
@@ -31,6 +49,11 @@
                 {% csrf_token %}
                 {{ form.signature_data.as_hidden }}
 
+                <!-- Hidden actual form field so Django receives the file properly -->
+                <div style="display:none;">
+                    {{ form.photo }}
+                </div>
+
                 <div class="mb-2">
                     <label class="form-label">Teller</label>
                     {{ form.teller }}
@@ -46,9 +69,35 @@
                     {{ form.amount }}
                     <small class="text-muted d-block mt-1">Allowed range: ₱5,000 – ₱50,000</small>
                 </div>
-                <div class="mb-2">
+
+                <!-- DUAL DIRECT BUTTONS (CAMERA & PHOTOS) -->
+                <div class="mb-3">
                     <label class="form-label">Photo Capture <span class="text-danger">*</span></label>
-                    {{ form.photo }}
+                    
+                    <div class="row g-2">
+                        <!-- Camera Button -->
+                        <div class="col-6">
+                            <div class="file-upload-wrapper">
+                                <button type="button" class="btn btn-outline-dark w-100 py-2 fw-bold text-center text-nowrap" style="font-size: 13px;">
+                                    📷 Camera
+                                </button>
+                                <input type="file" id="cam-input" accept="image/*" capture="environment">
+                            </div>
+                        </div>
+
+                        <!-- Photos Button -->
+                        <div class="col-6">
+                            <div class="file-upload-wrapper">
+                                <button type="button" class="btn btn-outline-dark w-100 py-2 fw-bold text-center text-nowrap" style="font-size: 13px;">
+                                    🖼️ Photos
+                                </button>
+                                <input type="file" id="gal-input" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected filename indicator -->
+                    <div id="photo-filename" class="form-text text-success fw-bold mt-2" style="display:none;"></div>
                 </div>
 
                 <div class="mb-3">
@@ -74,6 +123,7 @@
 </div>
 
 <script>
+    // Signature Canvas Logic
     const canvas = document.getElementById('sig-canvas');
     const ctx = canvas.getContext('2d');
     let writingInCanvas = false;
@@ -132,6 +182,28 @@
         hasSigned = false;
     });
 
+    // Handle file selection and bridge it into the real Django form input
+    const realPhotoInput = document.getElementById('id_photo');
+    const camInput = document.getElementById('cam-input');
+    const galInput = document.getElementById('gal-input');
+    const photoFilename = document.getElementById('photo-filename');
+
+    function processSelectedFile(e) {
+        if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            realPhotoInput.files = dt.files; // Assign to actual hidden Django input
+
+            photoFilename.style.display = 'block';
+            photoFilename.textContent = '✓ Attached: ' + file.name;
+        }
+    }
+
+    camInput.addEventListener('change', processSelectedFile);
+    galInput.addEventListener('change', processSelectedFile);
+
+    // Form Submission Validation
     document.getElementById('trans-form').addEventListener('submit', function(e) {
         const amountVal = parseFloat(document.getElementById('id_amount').value);
         
@@ -140,6 +212,13 @@
             e.preventDefault();
             alert('Amount must be between ₱5,000 and ₱50,000!');
             document.getElementById('id_amount').focus();
+            return false;
+        }
+
+        // Validate photo requirement
+        if (!realPhotoInput.files || realPhotoInput.files.length === 0) {
+            e.preventDefault();
+            alert('Photo capture is required! Please use Camera or Photos.');
             return false;
         }
 

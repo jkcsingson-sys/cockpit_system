@@ -18,7 +18,14 @@ class TransactionForm(forms.ModelForm):
                 'max': '50000', 
                 'step': '0.01'
             }),
-            'photo': forms.FileInput(attrs={'class': 'form-control', 'required': 'true'}),
+            # Updated photo widget: 'accept="image/*"' allows image filtering, 
+            # and removing strict capture attributes lets Android/iOS present 
+            # the native device menu for both Camera and Gallery.
+            'photo': forms.FileInput(attrs={
+                'class': 'form-control', 
+                'accept': 'image/*', 
+                'required': 'true'
+            }),
         }
 
     def __init__(self, *args, **kwargs):
