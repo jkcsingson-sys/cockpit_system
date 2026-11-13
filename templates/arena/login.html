@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorado Mega Cockpit - Login</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 400px; padding: 15px; }
+        .card { background: #ffffff; border: 1px solid #dc3545; border-radius: 6px; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); overflow: hidden; }
+        .custom-header { background-color: #800000; color: white; text-align: center; padding: 20px 15px; }
+        .custom-header h4 { font-size: 1.25rem; font-weight: bold; margin-bottom: 4px; }
+        .custom-header small { font-size: 0.875rem; color: #f1f1f1; }
+        .card-body { padding: 24px; }
+        .alert-danger { background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; padding: 10px; border-radius: 4px; font-size: 0.875rem; margin-bottom: 16px; }
+        .mb-3 { margin-bottom: 1rem; }
+        .form-label { display: block; font-weight: bold; color: #000; margin-bottom: 6px; font-size: 0.95rem; text-align: left; }
+        .form-control { width: 100%; padding: 10px 12px; font-size: 1rem; border: 1px solid #ced4da; border-radius: 4px; outline: none; }
+        .form-control:focus { border-color: #800000; box-shadow: 0 0 0 0.2rem rgba(128, 0, 0, 0.25); }
+        .btn-maroon { width: 100%; background-color: #800000; color: white; border: none; padding: 10px; font-size: 1rem; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .btn-maroon:hover { background-color: #600000; }
+        .footer-text { text-align: center; margin-top: 16px; font-size: 0.85rem; color: #6c757d; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <div class="custom-header">
+            <h4>Colorado Mega Cockpit</h4>
+            <small>User Login</small>
+        </div>
+        <div class="card-body">
+            {% if form.errors %}
+                <div class="alert-danger">Invalid username or password. Please try again.</div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn-maroon">Log In</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="footer-text">
+        &copy; 2026 Jhon Keith C. Singson. All rights reserved.
+    </div>
+</div>
+</body>
+</html>

@@ -35,7 +35,7 @@ class Teller(models.Model):
 
 class Transaction(models.Model):
     TRANSACTION_TYPES = (
-        ('REQUEST', 'Request Cash (Float)'),
+        ('REQUEST', 'Request Cash'),  # Updated label here
         ('PARTIAL', 'Partial Collection'),
     )
 
