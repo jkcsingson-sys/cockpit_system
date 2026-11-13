@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.forms import ModelForm
@@ -52,6 +52,8 @@ class TransactionAdmin(admin.ModelAdmin):
         'teller',              
         'transaction_type',    
         'amount',              
+        'get_partial_count',   
+        'get_request_count',   
         'it_user',             
         'timestamp',           
         'event',               
@@ -60,6 +62,48 @@ class TransactionAdmin(admin.ModelAdmin):
     search_fields = ('teller__name', 'it_user__username')
     
     readonly_fields = ('timestamp', 'it_user')
+
+    def get_partial_count(self, obj):
+        t_type = str(getattr(obj, 'transaction_type', '')).lower()
+        try:
+            t_display = str(obj.get_transaction_type_display()).lower()
+        except (AttributeError, TypeError):
+            t_display = t_type
+        
+        if 'partial' in t_type or 'partial' in t_display:
+            # Count downwards from newest to oldest so top row is 1
+            count = Transaction.objects.filter(
+                teller=obj.teller,
+                event=obj.event,
+                transaction_type=obj.transaction_type
+            ).filter(
+                Q(timestamp__gt=obj.timestamp) | 
+                Q(timestamp=obj.timestamp, id__gte=obj.id)
+            ).count()
+            return str(count)
+        return "-"
+    get_partial_count.short_description = "Partial Count"
+
+    def get_request_count(self, obj):
+        t_type = str(getattr(obj, 'transaction_type', '')).lower()
+        try:
+            t_display = str(obj.get_transaction_type_display()).lower()
+        except (AttributeError, TypeError):
+            t_display = t_type
+            
+        if 'request' in t_type or 'request' in t_display:
+            # Count downwards from newest to oldest so top row is 1
+            count = Transaction.objects.filter(
+                teller=obj.teller,
+                event=obj.event,
+                transaction_type=obj.transaction_type
+            ).filter(
+                Q(timestamp__gt=obj.timestamp) | 
+                Q(timestamp=obj.timestamp, id__gte=obj.id)
+            ).count()
+            return str(count)
+        return "-"
+    get_request_count.short_description = "Request Count"
 
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
@@ -99,11 +143,13 @@ class TransactionAdmin(admin.ModelAdmin):
         from django.shortcuts import render
         active_event = Event.objects.filter(is_active=True).first()
         if active_event:
-            transactions = Transaction.objects.filter(event=active_event)
+            transactions = Transaction.objects.filter(event=active_event).order_by('timestamp', 'id')
         else:
             transactions = Transaction.objects.none()
 
         total_amount = 0
+        teller_summary = {}
+
         for txn in transactions:
             t_type = str(getattr(txn, 'transaction_type', '')).lower()
             try:
@@ -112,15 +158,24 @@ class TransactionAdmin(admin.ModelAdmin):
                 t_display = t_type
                 
             amount = float(getattr(txn, 'amount', 0) or 0)
-            
+            teller_name = txn.teller.name if txn.teller else "Unknown"
+
+            if teller_name not in teller_summary:
+                teller_summary[teller_name] = {'partial_count': 0, 'request_count': 0, 'net': 0}
+
             if 'partial' in t_type or 'partial' in t_display:
                 total_amount += amount
+                teller_summary[teller_name]['partial_count'] += 1
+                teller_summary[teller_name]['net'] += amount
             elif 'request' in t_type or 'request' in t_display:
                 total_amount -= amount
+                teller_summary[teller_name]['request_count'] += 1
+                teller_summary[teller_name]['net'] -= amount
 
         context = {
             'transactions': transactions,
             'total_amount': total_amount,
+            'teller_summary': teller_summary,
             'active_event': active_event,
             'title': f'Post-Fight Transaction Summary Report - {active_event.name if active_event else "No Active Event"}',
         }
