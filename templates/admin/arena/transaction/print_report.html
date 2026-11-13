@@ -29,12 +29,14 @@
         {% endif %}
     </div>
 
-    <div class="row mb-3">
+    <div class="row mb-3 align-items-center">
         <div class="col-md-6">
             <p class="fw-bold mb-1">Total Transactions Recorded: {{ transactions|length }}</p>
         </div>
         <div class="col-md-6 text-md-end">
-            <p class="fw-bold mb-1">Total Amount: ₱{{ total_amount|floatformat:2 }}</p>
+            <p class="fw-bold mb-1" style="color: #800000; font-size: 18px;">
+                Net Balance: ₱{{ total_amount|floatformat:2 }}
+            </p>
         </div>
     </div>
 
