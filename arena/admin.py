@@ -63,6 +63,12 @@ class TransactionAdmin(admin.ModelAdmin):
     
     readonly_fields = ('timestamp', 'it_user')
 
+    def get_ordering(self, request):
+        # Force default sort by newest timestamp first unless another column header is clicked
+        if 'o' not in request.GET:
+            return ('-timestamp', '-id')
+        return super().get_ordering(request)
+
     def get_partial_count(self, obj):
         t_type = str(getattr(obj, 'transaction_type', '')).lower()
         try:
@@ -71,7 +77,6 @@ class TransactionAdmin(admin.ModelAdmin):
             t_display = t_type
         
         if 'partial' in t_type or 'partial' in t_display:
-            # Count downwards from newest to oldest so top row is 1
             count = Transaction.objects.filter(
                 teller=obj.teller,
                 event=obj.event,
@@ -92,7 +97,6 @@ class TransactionAdmin(admin.ModelAdmin):
             t_display = t_type
             
         if 'request' in t_type or 'request' in t_display:
-            # Count downwards from newest to oldest so top row is 1
             count = Transaction.objects.filter(
                 teller=obj.teller,
                 event=obj.event,
